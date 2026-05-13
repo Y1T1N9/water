@@ -225,29 +225,14 @@
 
 let clients = JSON.parse(localStorage.getItem('clients')) || [
   {
-    name: '吳双',
-    base: 450,
-    current: 
+    name: '王奶奶',
+    base: 1500,
+    current: 1800
   },
   {
-    name: '吳正林',
-    base: 450,
-    current: 
-  },
-   {
-    name: '吳竹旺',
-    base: 450,
-    current: 
-  }
-   {
-    name: '高陳月雲',
-    base: 500,
-    current: 
-  },
-   {
-    name: '許坤桂',
-    base: 1020,
-    current: 
+    name: '林爺爺',
+    base: 1200,
+    current: 900
   }
 ]
 
