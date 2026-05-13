@@ -6,6 +6,7 @@
   <title>個案水量紀錄系統</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <style>
     * {
@@ -224,14 +225,29 @@
 
 let clients = JSON.parse(localStorage.getItem('clients')) || [
   {
-    name: '王奶奶',
-    base: 1500,
-    current: 1800
+    name: '吳双',
+    base: 450,
+    current: 
   },
   {
-    name: '林爺爺',
-    base: 1200,
-    current: 900
+    name: '吳正林',
+    base: 450,
+    current: 
+  },
+   {
+    name: '吳竹旺',
+    base: 450,
+    current: 
+  }
+   {
+    name: '高陳月雲',
+    base: 500,
+    current: 
+  },
+   {
+    name: '許坤桂',
+    base: 1020,
+    current: 
   }
 ]
 
@@ -284,18 +300,62 @@ function addClient() {
   document.getElementById('water').value = ''
 }
 
-function fakeOCR() {
-  document.getElementById('ocrStatus').innerHTML = 'OCR 辨識中...'
+async function fakeOCR() {
+  const fileInput = document.getElementById('imageUpload')
+  const file = fileInput.files[0]
 
-  setTimeout(() => {
-    clients[0].current += 300
+  if (!file) {
+    alert('請先上傳照片')
+    return
+  }
+
+  document.getElementById('ocrStatus').innerHTML = 'OCR 辨識中，請稍候...'
+
+  try {
+    const result = await Tesseract.recognize(
+      file,
+      'chi_tra+eng',
+      {
+        tessedit_char_whitelist:
+          '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ毫升MLml王奶奶林爺爺'
+      }
+    )
+
+    const text = result.data.text
+
+    const numbers = text.match(/\d+/g)
+
+    if (!numbers || numbers.length === 0) {
+      document.getElementById('ocrStatus').innerHTML = '找不到數字，請重新拍攝'
+      return
+    }
+
+    // 自動判斷個案
+    let matchedClient = clients[0]
+
+    clients.forEach(client => {
+      if (text.includes(client.name)) {
+        matchedClient = client
+      }
+    })
+
+    const waterAmount = Number(numbers[0])
+
+    matchedClient.current += waterAmount
 
     document.getElementById('ocrStatus').innerHTML =
-      'OCR 辨識成功：增加 300 ml'
+      `OCR 辨識成功：${matchedClient.name} 增加 ${waterAmount} ml`
 
     saveData()
     renderTable()
-  }, 1500)
+  }
+
+  catch (error) {
+    console.error(error)
+
+    document.getElementById('ocrStatus').innerHTML = 'OCR 辨識失敗'
+  }
+}
 }
 
 function exportCSV() {
