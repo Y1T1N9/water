@@ -210,6 +210,23 @@
   </div>
 
   <div class="card">
+    <h2>OCR 歷史紀錄</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>時間</th>
+          <th>個案</th>
+          <th>增加水量</th>
+        </tr>
+      </thead>
+
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
     <h2>每月統計圖表</h2>
 
     <canvas id="chart"></canvas>
@@ -236,8 +253,38 @@ let clients = JSON.parse(localStorage.getItem('clients')) || [
   }
 ]
 
+// 每筆 OCR 歷史紀錄
+let historyRecords = JSON.parse(localStorage.getItem('historyRecords')) || []
+
+function saveHistory() {
+  localStorage.setItem('historyRecords', JSON.stringify(historyRecords))
+}
+
 function saveData() {
   localStorage.setItem('clients', JSON.stringify(clients))
+}
+
+function renderTable()
+renderHistory()() {
+  const table = document.getElementById('historyTable')
+
+  if (!table) return
+
+  table.innerHTML = ''
+
+  historyRecords
+    .slice()
+    .reverse()
+    .forEach(record => {
+      table.innerHTML += `
+        <tr>
+          <td>${record.date}</td>
+          <td>${record.time}</td>
+          <td>${record.name}</td>
+          <td>${record.amount} ml</td>
+        </tr>
+      `
+    })
 }
 
 function renderTable() {
@@ -280,6 +327,7 @@ function addClient() {
 
   saveData()
   renderTable()
+renderHistory()
 
   document.getElementById('name').value = ''
   document.getElementById('water').value = ''
@@ -315,24 +363,37 @@ async function fakeOCR() {
       return
     }
 
-    // 自動判斷個案
-    let matchedClient = clients[0]
+    // 一張照片多位個案自動辨識
+    let updatedClients = []
 
     clients.forEach(client => {
       if (text.includes(client.name)) {
-        matchedClient = client
+        const waterAmount = Number(numbers[0])
+
+        client.current += waterAmount
+
+        // 自動日期紀錄
+        const now = new Date()
+
+        historyRecords.push({
+          name: client.name,
+          amount: waterAmount,
+          date: now.toLocaleDateString('zh-TW'),
+          time: now.toLocaleTimeString('zh-TW')
+        })
+
+        updatedClients.push(`${client.name} +${waterAmount}ml`)
       }
     })
 
-    const waterAmount = Number(numbers[0])
-
-    matchedClient.current += waterAmount
+    saveHistory()
 
     document.getElementById('ocrStatus').innerHTML =
-      `OCR 辨識成功：${matchedClient.name} 增加 ${waterAmount} ml`
+      `OCR 辨識成功：${updatedClients.join('、')}`
 
     saveData()
     renderTable()
+renderHistory()
   }
 
   catch (error) {
@@ -360,6 +421,7 @@ function exportCSV() {
 }
 
 renderTable()
+renderHistory()
 
 const ctx = document.getElementById('chart')
 
